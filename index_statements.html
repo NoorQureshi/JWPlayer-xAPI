@@ -1,0 +1,345 @@
+<!doctype html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+
+  <title>xAPI sample page</title>
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+	<!-- using jw player to serve the video -->
+	<!-- JW player can be downloaded from -->
+	<!-- http://www.jwplayer.com/pricing/ -->
+  	<script src="./js/jwplayer6/jwplayer.js"></script>  	
+  	
+  	<!-- The video used is Big Buck Bunny under Creative commons 3.0.  -->
+  	<!-- You can find the movie here: -->
+  	<!-- https://peach.blender.org/download/ -->
+  	
+  	<!-- Includes for ADL's xAPI Wrapper -->
+	<!-- Download the files from: -->
+	<!-- https://github.com/adlnet/xAPIWrapper -->
+	<script type="text/javascript" src="./js/cryptojs_v3.1.2.js"></script>
+	<script type="text/javascript" src="./js/verbs.js"></script>
+	<script type="text/javascript" src="./js/xapistatement.js"></script>
+	<script type="text/javascript" src="./js/xapiwrapper.js"></script>
+	<!------------------------------------->
+	
+	<link rel="stylesheet" href="xAPI-Dashboard-master/lib/nv.d3.css"></link>
+	<script type="text/javascript" src="xAPI-Dashboard-master/dist/xapidashboard.min.js"></script>
+	<script type="text/javascript" src="xAPI-Dashboard-master/dist/xapicollection.min.js"></script>
+
+</head>
+
+<!-- <body onload="find_bandwdith()"> -->
+<body>
+<div align="center">
+
+A quick example of using xAPI to track jwplayer events.
+ 
+ <br/><br/>
+
+</div>
+
+	<div align="center", id="original">
+	<div id="mediaplayer1">
+	<a href="http://www.macromedia.com/go/getflashplayer">Get the Flash Player</a> to see this player.</div>
+		<script type="text/javascript">
+			playcount = 0;
+            var url = window.location.pathname;
+			var filename = url.substring(url.lastIndexOf('/')+1, url.lastIndexOf('.'));
+		  	jwplayer('mediaplayer1').setup({
+		  		flashplayer: './jwplayer6/jwplayer.flash.swf',
+				width: "480",
+      			aspectratio: "16:9",
+		    	file: "./big_buck_bunny.mp4",
+		    	autostart: false,
+		  	});
+		  			  	
+		  	var firstname = prompt("What is your first name?")
+		 
+		  		var conf = {
+			  "endpoint" : "https://lrs.adlnet.gov/xapi/",
+			  "auth" : "Basic " + toBase64('xapi-tools:xapi-tools'),
+		  };			
+							
+//end statement definition
+ 
+
+			//Sends statements when video is paused
+		  	jwplayer().onPause(function(event){
+		  		var duration = jwplayer().getDuration()
+		  		var position = jwplayer().getPosition()
+				console.log("Paused at " + position + " seconds of " + duration + " seconds");
+				ADL.XAPIWrapper.changeConfig(conf);
+				//define the xapi statement being sent
+				var pausestatement = {
+	"actor": {
+        "mbox": "mailto:" + firstname + "@user.com",
+        "name": firstname,
+        "objectType": "Agent"
+	},
+    "verb": {
+        "id": "http://adlnet.gov/expapi/verbs/Paused",
+        "display": { 
+            "en-US": "Paused"
+        }
+    },
+    "object": {
+        "id": "http://example.com/bigbuckbunnyvid.html",
+        "definition": {
+            "name": {
+                "en-US": "Big Buck Bunny Video"
+            },
+            "description": {
+                "en-US": "sample description"
+            }
+        },
+        "objectType": "Activity"
+	},
+	};
+	//end statement definition
+				var start = performance.now();
+        		var result = ADL.XAPIWrapper.sendStatement(pausestatement);
+        		var end = performance.now();
+       			console.log("Pause Statement Submitted");
+			}); //end onPause
+	
+	
+			//Sends statements when video is played		
+			jwplayer().onPlay(function(event){
+				console.log("Video Played");
+				if (playcount == 0){
+              			playcount++;
+            }  			
+				ADL.XAPIWrapper.changeConfig(conf);
+				//define the xapi statement being sent
+			  	var playstatement = {
+	"actor": {
+        "mbox": "mailto:" + firstname + "@user.com",
+        "name": firstname,
+        "objectType": "Agent"
+	},
+    "verb": {
+        "id": "http://adlnet.gov/expapi/verbs/Played",
+        "display": {
+            "en-US": "Played"
+        }
+    },
+    "object": {
+        "id": "http://example.com/bigbuckbunnyvid.html",
+        "definition": {
+            "name": {
+                "en-US": "Big Buck Bunny Video"
+            },
+            "description": {
+                "en-US": "sample description"
+            }
+        },
+        "objectType": "Activity"
+	},
+};
+	//end statement definition
+				var start = performance.now();
+        		var result = ADL.XAPIWrapper.sendStatement(playstatement);
+        		var end = performance.now();
+       			console.log("Play Statement Submitted");
+			});
+
+			
+			//Sends statements when video is Skipped
+			jwplayer().onSeek(function(event){
+				console.log("Skipped from " + event.position + " to " + event.offset);
+				ADL.XAPIWrapper.changeConfig(conf);
+				var skipstatement = {
+	"actor": {
+        "mbox": "mailto:" + firstname + "@user.com",
+        "name": firstname,
+        "objectType": "Agent"
+	},
+    "verb": {
+        "id": "http://adlnet.gov/expapi/verbs/Skipped",
+        "display": {
+            "en-US": "Skipped"
+        	}
+        },
+    "object": {
+        "id": "http://example.com/bigbuckbunnyvid.html",
+        "definition": {
+            "name": {
+                "en-US": "Big Buck Bunny Video"
+            },
+            "description": {
+                "en-US": "sample description"
+            }
+        },
+        "objectType": "Activity"
+	},
+};
+	//end statement definition
+				var start = performance.now();
+        		var result = ADL.XAPIWrapper.sendStatement(skipstatement);
+        		var end = performance.now();
+       			console.log("Skip Statement Submitted");
+			});	
+			
+			
+			//Sends statements when video is Muted
+			jwplayer().onMute(function(event){
+				var muted = jwplayer().getMute();
+				if (muted){
+					console.log("Mute On");
+				}
+				else {
+					console.log("Mute Off");
+				}		
+				ADL.XAPIWrapper.changeConfig(conf);
+				//define the xapi statement being sent	
+				var mutestatement = {
+	 "actor": {
+        "mbox": "mailto:" + firstname + "@user.com",
+        "name": firstname,
+        "objectType": "Agent"
+	},
+    "verb": {
+        "id": "http://adlnet.gov/expapi/verbs/Muted",
+        "display": {
+            "en-US": "Mute"
+        },
+    	},	
+    "object": {
+        "id": "http://example.com/bigbuckbunnyvid.html",
+        "definition": {
+            "name": {
+                "en-US": "Big Buck Bunny Video"
+            },
+            "description": {
+                "en-US": "sample description"
+            }
+        },
+        "objectType": "Activity"
+    },    
+	};
+	//end statement definition
+				var start = performance.now();
+        		var result = ADL.XAPIWrapper.sendStatement(mutestatement);
+        		var end = performance.now();
+       			console.log("Mute Statement Submitted");
+			});	
+			
+			//Sends statements when a video is watched to completion
+			jwplayer().onComplete(function(event){ 
+				console.log("Video Completed");
+				ADL.XAPIWrapper.changeConfig(conf);
+				//define the xapi statement being sent
+				var completestatement = {
+	"actor": {
+        "mbox": "mailto:" + firstname + "@user.com",
+        "name": firstname,
+        "objectType": "Agent"
+	},
+    "verb": {
+        "id": "http://adlnet.gov/expapi/verbs/Completed",
+        "display": {
+            "en-US": "Completed"
+        }
+    },
+    "object": {
+        "id": "http://example.com/bigbuckbunnyvid.html",
+        "definition": {
+            "name": {
+                "en-US": "Big Buck Bunny Video"
+            },
+            "description": {
+                "en-US": "sample description"
+            }
+        },
+        "objectType": "Activity"
+	},
+	};	
+	//end statement definition
+				var start = performance.now();
+        		var result = ADL.XAPIWrapper.sendStatement(completestatement);
+        		var end = performance.now();
+       			console.log("Complete Statement Submitted");
+			});	
+			
+			//Sends statements when video stopped via exiting the page
+			jwplayer().onIdle(function(event){
+				console.log("Video Stopped");
+				ADL.XAPIWrapper.changeConfig(conf);
+				//define the xapi statement being sent				
+				var stopstatement = {	
+	"actor": {
+        "mbox": "mailto:" + firstname + "@user.com",
+        "name": firstname,
+        "objectType": "Agent"
+	},
+    "verb": {
+        "id": "http://adlnet.gov/expapi/verbs/Stopped",
+        "display": {
+            "en-US": "Stopped"
+        }
+    },
+    "object": {
+        "id": "http://example.com/bigbuckbunnyvid.html",
+        "definition": {
+            "name": {
+                "en-US": "Big Buck Bunny Video"
+            },
+            "description": {
+                "en-US": "sample description"
+            }
+        },
+        "objectType": "Activity"
+	},
+	};
+	//end statement definition
+				var start = performance.now();
+        		var result = ADL.XAPIWrapper.sendStatement(stopstatement);
+        		var end = performance.now();
+       			console.log("Stop Statement Submitted");
+			});	
+			
+			//Shows error message in the Console whenever one occurs
+			jwplayer().onError(function(even){
+				console.log("Video Error" + event.message);
+			});	
+			
+//Build xAPI Dashboard		
+var wrapper = ADL.XAPIWrapper;
+wrapper.changeConfig({
+	   			"endpoint" : "https://cloud.scorm.com/tc/56ADU7KNNK/",
+    			"auth" : "Basic " + toBase64('2MKXPPURFfBL97UJmBU:wtengTls_14yV-KrMZo'),
+  			});
+var dash = new ADL.XAPIDashboard();
+
+window.onload = function(){
+    // get all statements made in the last two weeks
+    var query = {'since': new Date(Date.now() - 1000*60*60*24*30).toISOString()};
+    dash.fetchAllStatements(query, fetchDoneCallback);
+};
+
+function fetchDoneCallback(){
+    var chart = dash.createBarChart({
+        container: '#graphContainer svg',
+        groupBy: 'verb.id',
+        aggregate: ADL.count(),
+        customize: function(chart){
+            chart.xAxis.rotateLabels(45);
+            chart.xAxis.tickFormat(function(d){ return /[^\/]+$/.exec(d)[0]; });
+        }
+    });
+    chart.draw();
+}			
+  	
+		</script>
+		<br/> <br/>
+	</div>
+	
+	<!-- link to Bigbuckbunny.org for CC attribution -->
+	<p><a href="https://peach.blender.org/about/"><img class="alignnone size-full wp-image-450 alignleft" style="float: left;" title="cc-by" src="https://peach.blender.org/wp-content/uploads/cc-by.jpg" alt="" width="100" height="35" /></a></p>
+	
+
+</body>
+</html>
